@@ -1,8 +1,8 @@
 # cmake needs this line
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.17)
 
 # Define project name
-project(app)
+project(app LANGUAGES CXX CUDA)
 
 # enable C++ 11
 set (CMAKE_CXX_STANDARD 11)
@@ -11,6 +11,9 @@ set (CMAKE_CXX_STANDARD 11)
 # to the absolute path to the directory containing OpenCVConfig.cmake file
 # via the command line or GUI
 find_package(OpenCV REQUIRED)
+
+# CUDA
+find_package(CUDAToolkit REQUIRED)
 
 # if not, use manual specification of the OpenCVConfig.cmake path
 # and comment previous line of automatic finding
@@ -27,7 +30,19 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 # Declare the executable target built from your sources
-add_executable(app src/main.cpp)
+add_executable(app "")
+
+# Sources
+target_sources(app PRIVATE
+    src/NvAnalysis.cu
+    src/main.cpp
+)
+
+# Include
+target_include_directories(app PUBLIC 
+    include 
+    ${CUDAToolkit_INCLUDE_DIRS}
+)
 
 # Link your application with OpenCV libraries
-target_link_libraries(app PRIVATE ${OpenCV_LIBS})
+target_link_libraries(app PRIVATE ${OpenCV_LIBS} CUDA::cudart)
