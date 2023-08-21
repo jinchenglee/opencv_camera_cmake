@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 # Define project name
-project(my_project)
+project(app)
 
 # enable C++ 11
 set (CMAKE_CXX_STANDARD 11)
@@ -27,7 +27,7 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 message(STATUS "    include path: ${OpenCV_INCLUDE_DIRS}")
 
 # Declare the executable target built from your sources
-add_executable(my_project src/main.cpp)
+add_executable(app src/main.cpp)
 
 # Link your application with OpenCV libraries
-target_link_libraries(my_project PRIVATE ${OpenCV_LIBS})
+target_link_libraries(app PRIVATE ${OpenCV_LIBS})
