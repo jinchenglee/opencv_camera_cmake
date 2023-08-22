@@ -1,5 +1,5 @@
 # cmake needs this line
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.22)
 
 # Define project name
 project(app LANGUAGES CXX CUDA)
@@ -14,6 +14,11 @@ find_package(OpenCV REQUIRED)
 
 # CUDA
 find_package(CUDAToolkit REQUIRED)
+
+# Weired missing packages need explicit find_package()
+find_package(Eigen3 REQUIRED)
+find_package(Iconv REQUIRED)
+find_package(gflags REQUIRED)
 
 # if not, use manual specification of the OpenCVConfig.cmake path
 # and comment previous line of automatic finding
@@ -46,3 +51,5 @@ target_include_directories(app PUBLIC
 
 # Link your application with OpenCV libraries
 target_link_libraries(app PRIVATE ${OpenCV_LIBS} CUDA::cudart)
+
+set_target_properties(app PROPERTIES CUDA_ARCHITECTURES "72;87")

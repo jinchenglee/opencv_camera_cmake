@@ -22,6 +22,7 @@
 #include <cuda_runtime.h>
 
 #include "NvAnalysis.h"
+#include "mapxpy.h"
 
 #define TestCUDA true
 
@@ -31,7 +32,7 @@ int main() {
             cv::String filename = "./test.png";
             //cv::Mat srcHost = cv::imread(filename, cv::IMREAD_GRAYSCALE);
             cv::Mat gray_image = cv::imread(filename, cv::IMREAD_GRAYSCALE);
-            printf("gray_image row,col,size,elemSize,type=%d,%d,%d,%d,%d", 
+            printf("gray_image row,col,size,elemSize,type=%d,%d,%ld,%ld,%d", 
                 gray_image.rows, 
                 gray_image.cols, 
                 gray_image.total(), 
@@ -43,7 +44,7 @@ int main() {
                            new_frame_time, new_frame_time2;
 
             //cv::Mat gray_image;
- 	        //cv::cvtColor( srcHost, gray_image, cv::COLOR_BGR2GRAY );   
+            //cv::cvtColor( srcHost, gray_image, cv::COLOR_BGR2GRAY );   
             //cv::Mat gray_image = cv::Mat(srcHost.rows, srcHost.cols,
             //                    CV_8UC1, srcHost.ptr<uint8_t>(0, 0));
 
@@ -51,25 +52,39 @@ int main() {
 
 
             if(TestCUDA) {
-                int height = 480;
-                int width = 752*2;
-                size_t sizeOfImage = width * height * sizeof(uint8_t);
+                int height = IMG_H;
+                int width = IMG_W;
+                size_t sizeOfImage = width * height;
 
-                int *devPtr;
-                cudaMalloc(&devPtr, sizeOfImage);
-                cudaMemcpy(devPtr, gray_image.data, sizeOfImage, cudaMemcpyHostToDevice);
+                uint8_t *devPtr;
+                float *mapxDevPtr, *mapyDevPtr;
+                cudaMalloc(&devPtr, 2*sizeOfImage * sizeof(uint8_t));
+                cudaMalloc(&mapxDevPtr, sizeOfImage * sizeof(float32_t));
+                cudaMalloc(&mapyDevPtr, sizeOfImage * sizeof(float32_t));
+
+                // Copy mapx mapy to device mem.
+                cudaMemcpy(mapxDevPtr, mapx, sizeOfImage * sizeof(float32_t), cudaMemcpyHostToDevice);
+                cudaMemcpy(mapyDevPtr, mapy, sizeOfImage * sizeof(float32_t), cudaMemcpyHostToDevice);
+
+                cudaMemcpy(devPtr, gray_image.data, 2*sizeOfImage*sizeof(uint8_t), cudaMemcpyHostToDevice);
                 printf("Copied data from host to device.\n");
 
                 // CUDA proc
-        	    decoupleLR((CUdeviceptr) devPtr, width);
-
+                decoupleLR((CUdeviceptr) devPtr, width*2);
                 cudaDeviceSynchronize();
+                remap(devPtr, devPtr + width, mapxDevPtr, mapyDevPtr, width*2);
+                cudaDeviceSynchronize();
+                
+
                 printf("CUDA kernels done.\n");
 
-                cudaMemcpy(gray_image.data, devPtr, sizeOfImage, cudaMemcpyDeviceToHost);
+                cudaMemcpy(gray_image.data, devPtr, 2*sizeOfImage*sizeof(uint8_t), cudaMemcpyDeviceToHost);
                 printf("Copied data from device to host.\n");
 
 
+                cudaFree(devPtr);
+                cudaFree(mapxDevPtr);
+                cudaFree(mapyDevPtr);
 #if 0
                 cv::cuda::GpuMat dst, src;
                 src.upload(gray_image);
